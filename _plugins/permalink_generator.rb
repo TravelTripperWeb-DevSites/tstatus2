@@ -3,10 +3,11 @@ module Jekyll
     alias_method :read_orig, :read
 
     def read(files)
-      read_orig(files)
+      filtered_files = read_orig(files)
       @unfiltered_content.each do |page|
         site.store_page_permalink!(page)
       end
+      return filtered_files
     end
   end
 

@@ -1,5 +1,4 @@
 require 'xkeys'
-require 'fileutils'
 Jekyll::Hooks.register :site, :post_write do |site|
   SitemapGenerator.new(site).generate
 end
@@ -12,7 +11,7 @@ class SitemapGenerator
   end
 
   def generate
-    pages = site.pages
+    pages = site.unfiltered_pages
     default_lang = site.config['default_lang'] || 'en'
     # generate only once
     return unless default_lang == site.active_lang
@@ -43,8 +42,6 @@ class SitemapGenerator
     else
       sitemap['__SHA__'] = sha
     end
-    # unpublished files will be saved in _config.yml
-    save_config(unpublished_files) unless unpublished_files.empty?
     save sitemap
   end
 
@@ -66,40 +63,4 @@ class SitemapGenerator
     `git rev-parse HEAD`.chomp
   end
 
-  def unpublished_files
-    h_file = []
-    # enumerate the .html and .md files
-    Dir.glob("#{Dir.pwd}/**/*.{html,md}").each do |cfile|
-      if File.file?(cfile)
-        file_text = File.read(cfile)
-        # check the string exists
-        if file_text.include?("published_localized:\n  en: false")
-          # Add all the unpublished files to array
-          h_file << cfile.gsub("#{Dir.pwd}/", '')
-        end
-      end
-    end
-    h_file
-  end
-
-  def save_config(data)
-    # first time data
-    unless File.readlines('_config.yml').grep(/exclude:/).any?
-      open('_config.yml', 'a') do |f|
-        f << "exclude: #{data}"
-      end
-      return
-    end
-    # Data update
-    File.open('output_file', 'w') do |out_file|
-      File.foreach('_config.yml') do |line|
-        if line =~ /exclude:/
-          out_file.puts "exclude: #{data}"
-        else
-          out_file.puts line
-        end
-      end
-    end
-    FileUtils.mv('output_file', '_config.yml')
-  end
 end

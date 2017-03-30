@@ -6,6 +6,7 @@ module Jekyll
       filtered_files = read_orig(files)
       @unfiltered_content.each do |page|
         site.store_page_permalink!(page)
+        site.unfiltered_pages << page        
       end
       return filtered_files
     end
@@ -13,7 +14,14 @@ module Jekyll
 
   class Site
     attr_reader :permalinks_table
+    attr_accessor :unfiltered_pages
 
+    alias_method :reset_orig, :reset
+    def reset
+      reset_orig
+      self.unfiltered_pages = []
+    end
+    
     def store_page_permalink!(page)
       @permalinks_table ||= {}
 
